@@ -24,15 +24,14 @@ FASTLED_USING_NAMESPACE
 #define FRD_BUTTON_PIN 12
 #define MODE_BUTTON_PIN 13
 
-int movementDetectorInputPin = 10; // Пин для получения данных с детектора движения.
-int movementDetectorState = LOW; // Изначальное состояние детектора движения.
+#define MOVE_DETECT_PIN 10
 
-const int withSecondsOnDetectDisplayLedPin = A0; // Пин для светодиода. Отображение секунд только при детекте.
-const int withNoSecondsDisplayLedPin = A1; // Пин для светодиода. Секунды не отображаются.
-const int withSecondsDisplayLedPin = A2; // Пин для светодиода. Секунды отображаются всегда.
-const int hoursSetupLedPin = A5; // Пин для светодиода. Настройка часов.
-const int minutesSetupLedPin = A4; // Пин для светодиода. Настройка минут.
-const int secondsSetupLedPin = A3; // Пин для светодиода. Настройка секунд.
+#define WITH_SEC_ON_DETECT_LED_PIN A0 // Пин для светодиода. Отображение секунд только при детекте.
+#define WITH_NO_SEC_LED_PIN A1 // Пин для светодиода. Секунды не отображаются.
+#define WITH_SEC_LED_PIN A2 // Пин для светодиода. Секунды отображаются всегда.
+#define SEC_SETUP_LED_PIN A3 // Пин для светодиода. Настройка секунд.
+#define MIN_SETUP_LED_PIN A4 // Пин для светодиода. Настройка минут.
+#define HOUR_SETUP_LED_PIN A5 // Пин для светодиода. Настройка часов.
 
 EasyButton modeButton(MODE_BUTTON_PIN); // Кнопка переключения режимов (отображения или настройки)
 EasyButton frdButton(FRD_BUTTON_PIN); // Кнопка "вперед" (для отображения - переключение цветовой гаммы, для настройки - увеличение времени).
@@ -45,14 +44,14 @@ SetupMode setupMode = none; // Текущий режим настройки.
 virtuabotixRTC myRTC(6, 7, 8); // Структура для работы с часами. 6 - CLK, 7 - DAT, 8 - RST.
 CRGB leds[NUM_LEDS]; // Структура для работы со светодиодным кольцом.
 
-String serialCmd; // Команда, пришедшая через serial interface
-
 int setupSeconds = 0; // Установленные секунды
 int setupMinutes = 0; // Установленные минуты
 int setupHours = 0; // Установленные часы
 
+int movementDetectorState = LOW; // Изначальное состояние детектора движения.
+
 void onModePressedForDuration() {
-  Serial.println("Mode btn long click");
+  //Serial.println("Mode btn long click");
   if (setupMode == none) {
     setupMode = hours;
     toggleSetupLeds();
@@ -65,10 +64,17 @@ void onModePressedForDuration() {
 }
 
 void onModePressed() {
-  Serial.println("Mode btn single click");
+  //Serial.println("Mode btn single click");
   if (setupMode == none) {
     timeMode = nextTimeMode();
     toggleTimeLeds();
+
+    // Example of sending request via serial interface
+    Serial.print("BEG|onModeChanged|req|-1|current mode: ");
+    Serial.print(timeMode);
+    Serial.println("|END");
+    Serial.flush();
+
   } else {
     setupMode = nextSetupMode();
     toggleSetupLeds();
@@ -76,7 +82,7 @@ void onModePressed() {
 }
 
 void onFrdPressed() {
-  Serial.println("Frd btn single click");
+  //Serial.println("Frd btn single click");
   if (setupMode == none) {
      color = nextColorScheme();
   } else if (setupMode == hours) {
@@ -89,7 +95,7 @@ void onFrdPressed() {
 }
 
 void onBackPressed() {
-  Serial.println("Back btn single click");
+  //Serial.println("Back btn single click");
   if (setupMode == none) {
      color = previousColorScheme();
   } else if (setupMode == hours) {
@@ -104,12 +110,12 @@ void onBackPressed() {
 void setup() {
   Serial.begin(9600);
 
-  pinMode(withSecondsOnDetectDisplayLedPin, OUTPUT);
-  pinMode(withNoSecondsDisplayLedPin, OUTPUT);
-  pinMode(withSecondsDisplayLedPin, OUTPUT);
-  pinMode(hoursSetupLedPin, OUTPUT);
-  pinMode(minutesSetupLedPin, OUTPUT);
-  pinMode(secondsSetupLedPin, OUTPUT);
+  pinMode(WITH_SEC_ON_DETECT_LED_PIN, OUTPUT);
+  pinMode(WITH_NO_SEC_LED_PIN, OUTPUT);
+  pinMode(WITH_SEC_LED_PIN, OUTPUT);
+  pinMode(HOUR_SETUP_LED_PIN, OUTPUT);
+  pinMode(MIN_SETUP_LED_PIN, OUTPUT);
+  pinMode(SEC_SETUP_LED_PIN, OUTPUT);
 
   modeButton.begin();
   frdButton.begin();
@@ -128,6 +134,8 @@ void setup() {
   FastLED.setBrightness(BRIGHTNESS);
 
   //myRTC.setDS1302Time(00, 00, 00, 2, 29, 10, 2019);
+
+  Serial.println("initialized");
 }
 
 void loop()
@@ -166,6 +174,7 @@ void loop()
     setupMinutes = currentMinutes;
     setupHours = currentHours;
   }
+
 // Uncomment to debug
 //  Serial.print(currentSeconds);
 //  Serial.print(" ");
@@ -173,15 +182,40 @@ void loop()
 //  Serial.print(" ");
 //  Serial.print(currentHours);
 //  Serial.print(" ");
+
   if (Serial.available() > 0) {
-      serialCmd = Serial.readStringUntil('$');
-      int commandIndex = serialCmd.indexOf(";");
+
+      //Serial.println("New serial command:");
+      //Serial.flush();
+
+      String serialCmd = Serial.readStringUntil('\n');
+      //Serial.println(serialCmd);
+
+      int commandIndex = serialCmd.indexOf("|");
       String cmdName = serialCmd.substring(0, commandIndex);
       Serial.print("cmdName: " );
-      Serial.println(cmdName);
+      Serial.print(cmdName);
+
+      int replyIdIndex = serialCmd.indexOf("|", commandIndex + 1);
+      String replyId = serialCmd.substring(commandIndex + 1, replyIdIndex);
+
+      Serial.print(" replyId: " );
+      Serial.print(replyId);
+
+      int bodyIndex = serialCmd.indexOf("|", replyIdIndex + 1);
+      String body = serialCmd.substring(replyIdIndex + 1);
+
+      Serial.print(" body: " );
+      Serial.println(body);
+
+      //Serial.println("cmdName: " + cmdName + " replyId: " + replyId + " body: " + body);
+
       if (cmdName == "info") {
-        Serial.println("");
-        Serial.print("time: ");
+
+        Serial.print("BEG|info|");
+        Serial.print("rsp|");
+        Serial.print(replyId);
+        Serial.print("|time: ");
         String str_hours = String(currentHours);
         if (currentHours < 10) {
           str_hours = "0" + str_hours;
@@ -210,103 +244,155 @@ void loop()
         Serial.print(" colorScheme: ");
         Serial.print(color);
         Serial.print(";");
-        Serial.print(" possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest];");
-        Serial.println("");
-      }
-      if (cmdName == "setup") {
+        Serial.print(" possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest]");
+        Serial.println("|END");
+        Serial.flush();
+      } else if (cmdName == "setup") {
         setupMode = global;
         toggleSetupLeds();
-        Serial.print(" Global setup is on " );
-      }
-      if (cmdName == "time") {
+
+        Serial.print("BEG|setup|");
+        Serial.print("rsp|");
+        Serial.print(replyId);
+        Serial.print("|Global setup is on.");
+        Serial.println("|END");
+        Serial.flush();
+
+      } else if (cmdName == "time") {
+
+        Serial.print("BEG|time|rsp|" + replyId);
+
         if (setupMode == global) {
-          String time = serialCmd.substring(commandIndex + 1);
+          //String time = body.substring(commandIndex + 1);
 /////////////////
-          int hourIndex = time.indexOf(":");
-          Serial.print(" hourIndex ");
-          Serial.print(hourIndex);
-          String hour_str = time.substring(0, hourIndex);
-          Serial.print(" hour_str ");
-          Serial.print(hour_str);
-          //previousSetupHours = setupHours;
+          int hourIndex = body.indexOf(":");
+          //Serial.print(" hourIndex " + hourIndex);
+          //Serial.print(hourIndex);
+          String hour_str = body.substring(0, hourIndex);
+          //Serial.print(" hour_str " + hour_str);
+          //Serial.print(hour_str);
           setupHours = hour_str.toInt();
 /////////////////
-          int minuteIndex = time.indexOf(":", hourIndex + 1);
-          Serial.print(" minuteIndex ");
-          Serial.print(minuteIndex);
-          String minute_str = time.substring(hourIndex + 1, minuteIndex);
-          Serial.print(" minute_str ");
-          Serial.print(minute_str);
-          //previousSetupMinutes = setupMinutes;
+          int minuteIndex = body.indexOf(":", hourIndex + 1);
+          //Serial.print(" minuteIndex " + minuteIndex);
+          //Serial.print(minuteIndex);
+          String minute_str = body.substring(hourIndex + 1, minuteIndex);
+          //Serial.print(" minute_str " + minute_str);
+          //Serial.print(minute_str);
           setupMinutes = minute_str.toInt();
 /////////////////
-          String second_str = time.substring(minuteIndex + 1);
-          Serial.print(" second_str ");
-          Serial.print(second_str);
-          //previousSetupSeconds = setupSeconds;
+          String second_str = body.substring(minuteIndex + 1);
+          //Serial.print(" second_str " + second_str);
+          //Serial.print(second_str);
           setupSeconds = second_str.toInt();
+          Serial.print("|Presetting new time.");
 /////////////////
+        } else {
+          Serial.print("|time is ignored because global setup mode if off.");
         }
-        Serial.print(" Presetting new time.");
-      }
-      if (cmdName == "ok") {
+
+        Serial.println("|END");
+        Serial.flush();
+
+      } else if (cmdName == "ok") {
+
+        Serial.print("BEG|ok|");
+        Serial.print("rsp|");
+        Serial.print(replyId);
+
         if (setupMode == global) {
           setupMode = none;
           toggleTimeLeds();
           clearLeds();
           myRTC.setDS1302Time(setupSeconds, setupMinutes, setupHours, 2, 29, 10, 2019);
+
+          Serial.print("|New time is set. Global setup is off.");
+
+        } else {
+          Serial.print("|cmd ok is ignored because global setup mode if off.");
         }
-        Serial.print(" New time is set. Global setup is off" );
-      }
-      if (cmdName == "cancel") {
+
+        Serial.println("|END");
+        Serial.flush();
+
+      } else if (cmdName == "cancel") {
+
+        Serial.print("BEG|cancel|");
+        Serial.print("rsp|");
+        Serial.print(replyId);
+
         if (setupMode == global) {
           setupMode = none;
           toggleTimeLeds();
           clearLeds();
+          Serial.print("|Returned to previous time. Global setup is off.");
+        } else {
+          Serial.print("|cancel ok is ignored because global setup mode if off.");
         }
-        Serial.print(" Returned to previous time. Global setup is off" );
-      }
-      Serial.println(setupMode);
-      if (cmdName == "color") {
-        String colorSchemeName = serialCmd.substring(commandIndex + 1);
-        Serial.print("colorSchemeName: " );
-        Serial.println(colorSchemeName);
-        if (colorSchemeName.startsWith("blueLagoon")) {
-          Serial.print(" Color switched to blueLagoon");
+
+        Serial.println("|END");
+        Serial.flush();
+
+      } else if (cmdName == "color") {
+
+        Serial.print("BEG|color|");
+        Serial.print("rsp|");
+        Serial.print(replyId);
+        Serial.print("|");
+
+//        String colorSchemeName = body.substring(commandIndex + 1);
+//        Serial.print("colorSchemeName: " );
+//        Serial.println(colorSchemeName);
+
+        if (body.startsWith("blueLagoon")) {
+          //Serial.print(" Color switched to blueLagoon");
           color = blueLagoon;
         }
-        else if (colorSchemeName.startsWith("redDragon")) {
-          Serial.print(" Color switched to redDragon");
+        else if (body.startsWith("redDragon")) {
+          //Serial.print(" Color switched to redDragon");
           color = redDragon;
         }
-        else if (colorSchemeName.startsWith("fadeToGray")) {
-          Serial.print(" Color switched to fadeToGray");
+        else if (body.startsWith("fadeToGray")) {
+          //Serial.print(" Color switched to fadeToGray");
           color = fadeToGray;
         }
-        else if (colorSchemeName.startsWith("greenForrest")) {
-          Serial.print(" Color switched to greenForrest");
+        else if (body.startsWith("greenForrest")) {
+          //Serial.print(" Color switched to greenForrest");
           color = greenForrest;
         }
-      }
-      if (cmdName == "mode") {
-        String modeName = serialCmd.substring(commandIndex + 1);
-        Serial.print("modeName: " );
-        Serial.println(modeName);
-        if (modeName.startsWith("withSeconds")) {
-          Serial.print(" Mode switched to withSeconds");
+
+        Serial.print("color switched to: ");
+        Serial.print(color);
+        Serial.println("|END");
+        Serial.flush();
+
+      } else if (cmdName == "mode") {
+
+        Serial.print("BEG|mode|");
+        Serial.print("rsp|");
+        Serial.print(replyId);
+
+        if (body.startsWith("withSeconds")) {
+          //Serial.print(" Mode switched to withSeconds");
           timeMode = withSeconds;
           toggleTimeLeds();
         }
-        else if (modeName.startsWith("noSeconds")) {
-          Serial.print(" Mode switched to noSeconds");
+        else if (body.startsWith("noSeconds")) {
+          //Serial.print(" Mode switched to noSeconds");
           timeMode = noSeconds;
           toggleTimeLeds();
         }
-        else if (modeName.startsWith("secondsOnDetect")) {
-          Serial.print(" Mode switched to secondsOnDetect");
+        else if (body.startsWith("secondsOnDetect")) {
+          //Serial.print(" Mode switched to secondsOnDetect");
           timeMode = secondsOnDetect;
           toggleTimeLeds();
         }
+
+        Serial.print("|");
+        Serial.print("mode switched to: ");
+        Serial.print(timeMode);
+        Serial.println("|END");
+        Serial.flush();
       }
   }
 
@@ -337,18 +423,18 @@ void loop()
     if (timeMode == withSeconds) {
       leds[setupSeconds] = getSecondColor();
     } else if (timeMode == secondsOnDetect) {
-      int detectorState = digitalRead(movementDetectorInputPin);
+      int detectorState = digitalRead(MOVE_DETECT_PIN);
       if (detectorState == HIGH) {
         leds[setupSeconds] = getSecondColor();
         if (movementDetectorState == LOW) {
-          Serial.println("---------------Motion detected!-------------");
+          //Serial.println("---------------Motion detected!-------------");
           movementDetectorState = HIGH;
         }
       }
       else {
         if (movementDetectorState == HIGH) {
           leds[setupSeconds] = getSecondColor();
-          Serial.println("-----------------Motion ended!---------------");
+          //Serial.println("-----------------Motion ended!---------------");
           movementDetectorState = LOW;
         } else {
           leds[setupSeconds] = CRGB::Black;
@@ -436,110 +522,110 @@ ColorScheme previousColorScheme() {
   }
 }
 void toggleTimeLeds() {
-  digitalWrite(hoursSetupLedPin, LOW);
-  digitalWrite(minutesSetupLedPin, LOW);
-  digitalWrite(secondsSetupLedPin, LOW);
+  digitalWrite(HOUR_SETUP_LED_PIN, LOW);
+  digitalWrite(MIN_SETUP_LED_PIN, LOW);
+  digitalWrite(SEC_SETUP_LED_PIN, LOW);
   if (timeMode == withSeconds) {
-    Serial.println("withSecondsDisplayLedPin");
-    digitalWrite(withSecondsDisplayLedPin, HIGH);
-    digitalWrite(withNoSecondsDisplayLedPin, LOW);
-    digitalWrite(withSecondsOnDetectDisplayLedPin, LOW);
+    //Serial.println("WITH_SEC_LED_PIN");
+    digitalWrite(WITH_SEC_LED_PIN, HIGH);
+    digitalWrite(WITH_NO_SEC_LED_PIN, LOW);
+    digitalWrite(WITH_SEC_ON_DETECT_LED_PIN, LOW);
   }
   else if (timeMode == noSeconds) {
-    Serial.println("withNoSecondsDisplayLedPin");
-    digitalWrite(withSecondsDisplayLedPin, LOW);
-    digitalWrite(withNoSecondsDisplayLedPin, HIGH);
-    digitalWrite(withSecondsOnDetectDisplayLedPin, LOW);
+    //Serial.println("WITH_NO_SEC_LED_PIN");
+    digitalWrite(WITH_SEC_LED_PIN, LOW);
+    digitalWrite(WITH_NO_SEC_LED_PIN, HIGH);
+    digitalWrite(WITH_SEC_ON_DETECT_LED_PIN, LOW);
   }
   else if (timeMode == secondsOnDetect) {
-    Serial.println("withSecondsOnDetectDisplayLedPin");
-    digitalWrite(withSecondsDisplayLedPin, LOW);
-    digitalWrite(withNoSecondsDisplayLedPin, LOW);
-    digitalWrite(withSecondsOnDetectDisplayLedPin, HIGH);
+    //Serial.println("WITH_SEC_ON_DETECT_LED_PIN");
+    digitalWrite(WITH_SEC_LED_PIN, LOW);
+    digitalWrite(WITH_NO_SEC_LED_PIN, LOW);
+    digitalWrite(WITH_SEC_ON_DETECT_LED_PIN, HIGH);
   }
 }
 void toggleSetupLeds() {
-  digitalWrite(withSecondsDisplayLedPin, LOW);
-  digitalWrite(withNoSecondsDisplayLedPin, LOW);
-  digitalWrite(withSecondsOnDetectDisplayLedPin, LOW);
+  digitalWrite(WITH_SEC_LED_PIN, LOW);
+  digitalWrite(WITH_NO_SEC_LED_PIN, LOW);
+  digitalWrite(WITH_SEC_ON_DETECT_LED_PIN, LOW);
   if (setupMode == hours) {
-    Serial.println("setupMode == hours");
-    digitalWrite(hoursSetupLedPin, HIGH);
-    digitalWrite(minutesSetupLedPin, LOW);
-    digitalWrite(secondsSetupLedPin, LOW);
+    //Serial.println("setupMode == hours");
+    digitalWrite(HOUR_SETUP_LED_PIN, HIGH);
+    digitalWrite(MIN_SETUP_LED_PIN, LOW);
+    digitalWrite(SEC_SETUP_LED_PIN, LOW);
   }
   else if (setupMode == minutes) {
-    Serial.println("setupMode == minutes");
-    digitalWrite(hoursSetupLedPin, LOW);
-    digitalWrite(minutesSetupLedPin, HIGH);
-    digitalWrite(secondsSetupLedPin, LOW);
+    //Serial.println("setupMode == minutes");
+    digitalWrite(HOUR_SETUP_LED_PIN, LOW);
+    digitalWrite(MIN_SETUP_LED_PIN, HIGH);
+    digitalWrite(SEC_SETUP_LED_PIN, LOW);
   }
   else if (setupMode == seconds) {
-    Serial.println("setupMode == seconds");
-    digitalWrite(hoursSetupLedPin, LOW);
-    digitalWrite(minutesSetupLedPin, LOW);
-    digitalWrite(secondsSetupLedPin, HIGH);
+    //Serial.println("setupMode == seconds");
+    digitalWrite(HOUR_SETUP_LED_PIN, LOW);
+    digitalWrite(MIN_SETUP_LED_PIN, LOW);
+    digitalWrite(SEC_SETUP_LED_PIN, HIGH);
   }
 }
 
 void nextSeconds() {
-  Serial.print(" next seconds: ");
+  //Serial.print(" next seconds: ");
   if (setupSeconds == 59) {
     setupSeconds = 0;
   } else {
     setupSeconds ++;
   }
-  Serial.println(setupSeconds);
+  //Serial.println(setupSeconds);
 }
 
 void previousSeconds() {
-  Serial.print(" previous seconds: ");
+  //Serial.print(" previous seconds: ");
   if (setupSeconds == 0) {
     setupSeconds = 59;
   } else {
     setupSeconds--;
   }
-  Serial.println(setupSeconds);
+  //Serial.println(setupSeconds);
 }
 
 void nextMinutes() {
-  Serial.print(" next minutes: ");
+  //Serial.print(" next minutes: ");
   if (setupMinutes == 59) {
     setupMinutes= 0;
   } else {
     setupMinutes++;
   }
-  Serial.println(setupMinutes);
+  //Serial.println(setupMinutes);
 }
 
 void previousMinutes() {
-  Serial.print(" previous minutes: ");
+  //Serial.print(" previous minutes: ");
   if (setupMinutes == 0) {
     setupMinutes= 59;
   } else {
     setupMinutes--;
   }
-  Serial.println(setupMinutes);
+  //Serial.println(setupMinutes);
 }
 
 void nextHours() {
-  Serial.print(" next hours: ");
+  //Serial.print(" next hours: ");
   if (setupHours == 23) {
     setupHours = 0;
   } else {
     setupHours++;
   }
-  Serial.println(setupHours);
+  //Serial.println(setupHours);
 }
 
 void previousHours() {
-  Serial.print(" previous hours: ");
+  //Serial.print(" previous hours: ");
   if (setupHours == 0) {
     setupHours = 23;
   } else {
     setupHours--;
   }
-  Serial.println(setupHours);
+  //Serial.println(setupHours);
 }
 
 CRGB getHourColor() {
