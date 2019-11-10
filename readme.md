@@ -172,3 +172,23 @@ no
 ***
 
 ----------------------------
+
+
+Examples:
+BEG|info|rsp|3|time: 23:20:31; timeMode: 1; possible time modes: [withSeconds, noSeconds, secondsOnDetect]; is global setup mode: 0; colorScheme: 3; possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest]|END
+
+BEG|mode|rsp|3|mode switched to: 0|END
+
+BEG|mode|rsp|3|mode switched to: 1|END
+
+BEG|mode|rsp|3|mode switched to: 2|END
+
+BEG|color|rsp|3|color switched to: 1|END
+
+BEG|ok|rsp|3|cmd ok is ignored because global setup mode if off.|END
+
+BEG|cancel|rsp|3|cancel ok is ignored because global setup mode if off.|END
+
+BEG|time|rsp|3|time is ignored because global setup mode if off.|END
+
+BEG|time|rsp|3|Presetting new time.|END
