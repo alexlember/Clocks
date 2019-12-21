@@ -20,18 +20,18 @@ FASTLED_USING_NAMESPACE
 #define BRIGHTNESS 20
 #define FRAMES_PER_SECOND 120
 #define LONG_CLICK_MS 2000
-#define BACK_BUTTON_PIN 11
-#define FRD_BUTTON_PIN 12
-#define MODE_BUTTON_PIN 13
+#define BACK_BUTTON_PIN 13
+#define FRD_BUTTON_PIN 11
+#define MODE_BUTTON_PIN 12
 
 #define MOVE_DETECT_PIN 10
 
-#define WITH_SEC_ON_DETECT_LED_PIN A0 // Пин для светодиода. Отображение секунд только при детекте.
-#define WITH_NO_SEC_LED_PIN A1 // Пин для светодиода. Секунды не отображаются.
-#define WITH_SEC_LED_PIN A2 // Пин для светодиода. Секунды отображаются всегда.
-#define SEC_SETUP_LED_PIN A3 // Пин для светодиода. Настройка секунд.
-#define MIN_SETUP_LED_PIN A4 // Пин для светодиода. Настройка минут.
-#define HOUR_SETUP_LED_PIN A5 // Пин для светодиода. Настройка часов.
+#define WITH_SEC_ON_DETECT_LED_PIN A4 // Пин для светодиода. Отображение секунд только при детекте. Синий
+#define WITH_NO_SEC_LED_PIN A2 // Пин для светодиода. Секунды не отображаются. Желтый
+#define WITH_SEC_LED_PIN A0 // Пин для светодиода. Секунды отображаются всегда. Желтый
+#define SEC_SETUP_LED_PIN A5 // Пин для светодиода. Настройка секунд. Красный
+#define MIN_SETUP_LED_PIN A1 // Пин для светодиода. Настройка минут. Красный
+#define HOUR_SETUP_LED_PIN A3 // Пин для светодиода. Настройка часов. Красный
 
 EasyButton modeButton(MODE_BUTTON_PIN); // Кнопка переключения режимов (отображения или настройки)
 EasyButton frdButton(FRD_BUTTON_PIN); // Кнопка "вперед" (для отображения - переключение цветовой гаммы, для настройки - увеличение времени).
@@ -41,7 +41,7 @@ TimeMode timeMode = withSeconds; // Текущий режим отображен
 ColorScheme color = greenForrest; // Текущая цветовая гамма.
 SetupMode setupMode = none; // Текущий режим настройки.
 
-virtuabotixRTC myRTC(6, 7, 8); // Структура для работы с часами. 6 - CLK, 7 - DAT, 8 - RST.
+virtuabotixRTC myRTC(5, 6, 7); // Структура для работы с часами. 5 - CLK, 6 - DAT, 7 - RST.
 CRGB leds[NUM_LEDS]; // Структура для работы со светодиодным кольцом.
 
 int setupSeconds = 0; // Установленные секунды
@@ -70,9 +70,9 @@ void onModePressed() {
     toggleTimeLeds();
 
     // Example of sending request via serial interface
-    Serial.print("BEG|onModeChanged|req|-1|current mode: ");
+    Serial.print("BEG#onModeChanged#req#-1#current mode: ");
     Serial.print(timeMode);
-    Serial.println("|END");
+    Serial.println("#END");
     Serial.flush();
 
   } else {
@@ -191,18 +191,18 @@ void loop()
       String serialCmd = Serial.readStringUntil('\n');
       //Serial.println(serialCmd);
 
-      int commandIndex = serialCmd.indexOf("|");
+      int commandIndex = serialCmd.indexOf("#");
       String cmdName = serialCmd.substring(0, commandIndex);
       Serial.print("cmdName: " );
       Serial.print(cmdName);
 
-      int replyIdIndex = serialCmd.indexOf("|", commandIndex + 1);
+      int replyIdIndex = serialCmd.indexOf("#", commandIndex + 1);
       String replyId = serialCmd.substring(commandIndex + 1, replyIdIndex);
 
       Serial.print(" replyId: " );
       Serial.print(replyId);
 
-      int bodyIndex = serialCmd.indexOf("|", replyIdIndex + 1);
+      int bodyIndex = serialCmd.indexOf("#", replyIdIndex + 1);
       String body = serialCmd.substring(replyIdIndex + 1);
 
       Serial.print(" body: " );
@@ -212,10 +212,10 @@ void loop()
 
       if (cmdName == "info") {
 
-        Serial.print("BEG|info|");
-        Serial.print("rsp|");
+        Serial.print("BEG#info#");
+        Serial.print("rsp#");
         Serial.print(replyId);
-        Serial.print("|time: ");
+        Serial.print("#time: ");
         String str_hours = String(currentHours);
         if (currentHours < 10) {
           str_hours = "0" + str_hours;
@@ -245,22 +245,22 @@ void loop()
         Serial.print(color);
         Serial.print(";");
         Serial.print(" possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest]");
-        Serial.println("|END");
+        Serial.println("#END");
         Serial.flush();
       } else if (cmdName == "setup") {
         setupMode = global;
         toggleSetupLeds();
 
-        Serial.print("BEG|setup|");
-        Serial.print("rsp|");
+        Serial.print("BEG#setup#");
+        Serial.print("rsp#");
         Serial.print(replyId);
-        Serial.print("|Global setup is on.");
-        Serial.println("|END");
+        Serial.print("#Global setup is on.");
+        Serial.println("#END");
         Serial.flush();
 
       } else if (cmdName == "time") {
 
-        Serial.print("BEG|time|rsp|" + replyId);
+        Serial.print("BEG#time#rsp#" + replyId);
 
         if (setupMode == global) {
           //String time = body.substring(commandIndex + 1);
@@ -285,19 +285,19 @@ void loop()
           //Serial.print(" second_str " + second_str);
           //Serial.print(second_str);
           setupSeconds = second_str.toInt();
-          Serial.print("|Presetting new time.");
+          Serial.print("#Presetting new time.");
 /////////////////
         } else {
-          Serial.print("|time is ignored because global setup mode if off.");
+          Serial.print("#time is ignored because global setup mode if off.");
         }
 
-        Serial.println("|END");
+        Serial.println("#END");
         Serial.flush();
 
       } else if (cmdName == "ok") {
 
-        Serial.print("BEG|ok|");
-        Serial.print("rsp|");
+        Serial.print("BEG#ok#");
+        Serial.print("rsp#");
         Serial.print(replyId);
 
         if (setupMode == global) {
@@ -306,39 +306,39 @@ void loop()
           clearLeds();
           myRTC.setDS1302Time(setupSeconds, setupMinutes, setupHours, 2, 29, 10, 2019);
 
-          Serial.print("|New time is set. Global setup is off.");
+          Serial.print("#New time is set. Global setup is off.");
 
         } else {
-          Serial.print("|cmd ok is ignored because global setup mode if off.");
+          Serial.print("#cmd ok is ignored because global setup mode if off.");
         }
 
-        Serial.println("|END");
+        Serial.println("#END");
         Serial.flush();
 
       } else if (cmdName == "cancel") {
 
-        Serial.print("BEG|cancel|");
-        Serial.print("rsp|");
+        Serial.print("BEG#cancel#");
+        Serial.print("rsp#");
         Serial.print(replyId);
 
         if (setupMode == global) {
           setupMode = none;
           toggleTimeLeds();
           clearLeds();
-          Serial.print("|Returned to previous time. Global setup is off.");
+          Serial.print("#Returned to previous time. Global setup is off.");
         } else {
-          Serial.print("|cancel ok is ignored because global setup mode if off.");
+          Serial.print("#cancel ok is ignored because global setup mode if off.");
         }
 
-        Serial.println("|END");
+        Serial.println("#END");
         Serial.flush();
 
       } else if (cmdName == "color") {
 
-        Serial.print("BEG|color|");
-        Serial.print("rsp|");
+        Serial.print("BEG#color#");
+        Serial.print("rsp#");
         Serial.print(replyId);
-        Serial.print("|");
+        Serial.print("#");
 
 //        String colorSchemeName = body.substring(commandIndex + 1);
 //        Serial.print("colorSchemeName: " );
@@ -363,13 +363,13 @@ void loop()
 
         Serial.print("color switched to: ");
         Serial.print(color);
-        Serial.println("|END");
+        Serial.println("#END");
         Serial.flush();
 
       } else if (cmdName == "mode") {
 
-        Serial.print("BEG|mode|");
-        Serial.print("rsp|");
+        Serial.print("BEG#mode#");
+        Serial.print("rsp#");
         Serial.print(replyId);
 
         if (body.startsWith("withSeconds")) {
@@ -388,10 +388,10 @@ void loop()
           toggleTimeLeds();
         }
 
-        Serial.print("|");
+        Serial.print("#");
         Serial.print("mode switched to: ");
         Serial.print(timeMode);
-        Serial.println("|END");
+        Serial.println("#END");
         Serial.flush();
       }
   }
