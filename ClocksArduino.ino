@@ -29,8 +29,8 @@ FASTLED_USING_NAMESPACE
 #define WITH_SEC_ON_DETECT_LED_PIN A4 // Пин для светодиода. Отображение секунд только при детекте. Синий
 #define WITH_NO_SEC_LED_PIN A2 // Пин для светодиода. Секунды не отображаются. Желтый
 #define WITH_SEC_LED_PIN A0 // Пин для светодиода. Секунды отображаются всегда. Желтый
-#define SEC_SETUP_LED_PIN A5 // Пин для светодиода. Настройка секунд. Красный
-#define MIN_SETUP_LED_PIN A1 // Пин для светодиода. Настройка минут. Красный
+#define SEC_SETUP_LED_PIN A1 // Пин для светодиода. Настройка секунд. Красный
+#define MIN_SETUP_LED_PIN A5 // Пин для светодиода. Настройка минут. Красный
 #define HOUR_SETUP_LED_PIN A3 // Пин для светодиода. Настройка часов. Красный
 
 EasyButton modeButton(MODE_BUTTON_PIN); // Кнопка переключения режимов (отображения или настройки)
