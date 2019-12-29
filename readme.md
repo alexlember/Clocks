@@ -11,7 +11,7 @@ General request format:
 cmd - String. Command name. Options: [info/mode/color/setup/ok/cancel/time].
 id - Integer. Id command for netting respone. This value is forwarding to response. In case of value = "-1" reply is not needed.
 body - String. Cmd body.
-# - cmd parts separator.
+Cmd parts separator - #.
 \n - cmd end (carrige return).
 ***
 
@@ -19,15 +19,15 @@ body - String. Cmd body.
 
 ***
 General response format:
-BEG#{cmd}#{direction}#{id}#{body}#END
+^#{cmd}#{direction}#{id}#{body}#$
 
-BEG - CMD begin marker.
+CMD begin marker - ^
 cmd - String. Command name. Options: [info/mode/color/setup/ok/cancel/time].
 direction - String. Direction. Optons: [req/rsp].
 id - Integer. Id command for netting respone with request. If direction == request value == -1.
 body - String. Cmd body.
-# - cmd parts separator.
-END - CMD end marker.
+cmd parts separator - #.
+CMD end marker - $
 ***
 
 ---------------------------
@@ -44,7 +44,7 @@ Example:
 info#1#
 
 *respone*
-BEG#info#rsp#1#time: 15:22:56; timeMode: withSeconds; possible time modes: [withSeconds, noSeconds, secondsOnDetect]; is global setup mode: 0; colorScheme: redDragon; possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest]#END
+^#info#rsp#1#time: 15:22:56; timeMode: withSeconds; possible time modes: [withSeconds, noSeconds, secondsOnDetect]; is global setup mode: 0; colorScheme: redDragon; possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest]#$
 ***
 
 ----------------------------
@@ -61,7 +61,7 @@ Example:
 mode#2#withSeconds
 
 *respone*
-BEG#mode#rsp#2#mode switched to: 2#END
+^#mode#rsp#2#mode switched to: 2#$
 ***
 
 ----------------------------
@@ -78,7 +78,7 @@ Example:
 color#3#redDragon
 
 *respone*
-BEG#color#rsp#3#color switched to: 0#END
+^#color#rsp#3#color switched to: 0#$
 ***
 
 ----------------------------
@@ -95,7 +95,7 @@ Example:
 setup#4#
 
 *respone*
-BEG#setup#rsp#4#Global setup is on.#END
+^#setup#rsp#4#Global setup is on.#$
 ***
 
 ----------------------------
@@ -112,8 +112,8 @@ Example:
 ok#5#
 
 *respone*
-if global setup mode: 1 -> BEG#ok#rsp#5#New time is set. Global setup is off#END
-if global setup mode: 0 -> BEG#ok#rsp#5#cmd ok is ignored because global setup mode if off.#END
+if global setup mode: 1 -> ^#ok#rsp#5#New time is set. Global setup is off#$
+if global setup mode: 0 -> ^#ok#rsp#5#cmd ok is ignored because global setup mode if off.#$
 ***
 
 ----------------------------
@@ -130,8 +130,8 @@ Example:
 cancel#6#
 
 *respone*
-if global setup mode: 1 -> BEG#cancel#rsp#6#Returned to previous time. Global setup is off#END
-if global setup mode: 0 -> BEG#cancel#rsp#6#cmd cancel is ignored because global setup mode if off.#END
+if global setup mode: 1 -> ^#cancel#rsp#6#Returned to previous time. Global setup is off#$
+if global setup mode: 0 -> ^#cancel#rsp#6#cmd cancel is ignored because global setup mode if off.#$
 ***
 
 ----------------------------
@@ -148,8 +148,8 @@ Example:
 time#7#16:21:43
 
 *respone*
-if global setup mode: 1 -> BEG#time#rsp#7#Presetting new time.#END
-if global setup mode: 0 -> BEG#time#rsp#7#time is ignored because global setup mode if off.#END
+if global setup mode: 1 -> ^#time#rsp#7#Presetting new time.#$
+if global setup mode: 0 -> ^#time#rsp#7#time is ignored because global setup mode if off.#$
 ***
 
 ----------------------------
@@ -165,7 +165,7 @@ id - "-1"
 body - "current mode: 0"	
 
 Example:
-BEG#onModeChanged#req#-1#current mode: 0#END
+^#onModeChanged#req#-1#current mode: 0#$
 
 *respone*
 no
@@ -175,20 +175,20 @@ no
 
 
 Examples:
-BEG#info#rsp#3#time: 23:20:31; timeMode: 1; possible time modes: [withSeconds, noSeconds, secondsOnDetect]; is global setup mode: 0; colorScheme: 3; possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest]#END
+^#info#rsp#3#time: 23:20:31; timeMode: 1; possible time modes: [withSeconds, noSeconds, secondsOnDetect]; is global setup mode: 0; colorScheme: 3; possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest]#$
 
-BEG#mode#rsp#3#mode switched to: 0#END
+^#mode#rsp#3#mode switched to: 0#$
 
-BEG#mode#rsp#3#mode switched to: 1#END
+^#mode#rsp#3#mode switched to: 1#$
 
-BEG#mode#rsp#3#mode switched to: 2#END
+^#mode#rsp#3#mode switched to: 2#$
 
-BEG#color#rsp#3#color switched to: 1#END
+^#color#rsp#3#color switched to: 1#$
 
-BEG#ok#rsp#3#cmd ok is ignored because global setup mode if off.#END
+^#ok#rsp#3#cmd ok is ignored because global setup mode if off.#$
 
-BEG#cancel#rsp#3#cancel ok is ignored because global setup mode if off.#END
+^#cancel#rsp#3#cancel ok is ignored because global setup mode if off.#$
 
-BEG#time#rsp#3#time is ignored because global setup mode if off.#END
+^#time#rsp#3#time is ignored because global setup mode if off.#$
 
-BEG#time#rsp#3#Presetting new time.#END
+^#time#rsp#3#Presetting new time.#$

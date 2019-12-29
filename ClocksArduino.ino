@@ -70,9 +70,9 @@ void onModePressed() {
     toggleTimeLeds();
 
     // Example of sending request via serial interface
-    Serial.print("BEG#onModeChanged#req#-1#current mode: ");
+    Serial.print("^#onModeChanged#req#-1#current mode: ");
     Serial.print(timeMode);
-    Serial.println("#END");
+    Serial.println("#$");
     Serial.flush();
 
   } else {
@@ -212,7 +212,7 @@ void loop()
 
       if (cmdName == "info") {
 
-        Serial.print("BEG#info#");
+        Serial.print("^#info#");
         Serial.print("rsp#");
         Serial.print(replyId);
         Serial.print("#time: ");
@@ -245,22 +245,22 @@ void loop()
         Serial.print(color);
         Serial.print(";");
         Serial.print(" possible color schemes: [blueLagoon, redDragon, fadeToGray, greenForrest]");
-        Serial.println("#END");
+        Serial.println("#$");
         Serial.flush();
       } else if (cmdName == "setup") {
         setupMode = global;
         toggleSetupLeds();
 
-        Serial.print("BEG#setup#");
+        Serial.print("^#setup#");
         Serial.print("rsp#");
         Serial.print(replyId);
         Serial.print("#Global setup is on.");
-        Serial.println("#END");
+        Serial.println("#$");
         Serial.flush();
 
       } else if (cmdName == "time") {
 
-        Serial.print("BEG#time#rsp#" + replyId);
+        Serial.print("^#time#rsp#" + replyId);
 
         if (setupMode == global) {
           //String time = body.substring(commandIndex + 1);
@@ -291,12 +291,12 @@ void loop()
           Serial.print("#time is ignored because global setup mode if off.");
         }
 
-        Serial.println("#END");
+        Serial.println("#$");
         Serial.flush();
 
       } else if (cmdName == "ok") {
 
-        Serial.print("BEG#ok#");
+        Serial.print("^#ok#");
         Serial.print("rsp#");
         Serial.print(replyId);
 
@@ -312,12 +312,12 @@ void loop()
           Serial.print("#cmd ok is ignored because global setup mode if off.");
         }
 
-        Serial.println("#END");
+        Serial.println("#$");
         Serial.flush();
 
       } else if (cmdName == "cancel") {
 
-        Serial.print("BEG#cancel#");
+        Serial.print("^#cancel#");
         Serial.print("rsp#");
         Serial.print(replyId);
 
@@ -330,12 +330,12 @@ void loop()
           Serial.print("#cancel ok is ignored because global setup mode if off.");
         }
 
-        Serial.println("#END");
+        Serial.println("#$");
         Serial.flush();
 
       } else if (cmdName == "color") {
 
-        Serial.print("BEG#color#");
+        Serial.print("^#color#");
         Serial.print("rsp#");
         Serial.print(replyId);
         Serial.print("#");
@@ -363,12 +363,12 @@ void loop()
 
         Serial.print("color switched to: ");
         Serial.print(color);
-        Serial.println("#END");
+        Serial.println("#$");
         Serial.flush();
 
       } else if (cmdName == "mode") {
 
-        Serial.print("BEG#mode#");
+        Serial.print("^#mode#");
         Serial.print("rsp#");
         Serial.print(replyId);
 
@@ -391,7 +391,7 @@ void loop()
         Serial.print("#");
         Serial.print("mode switched to: ");
         Serial.print(timeMode);
-        Serial.println("#END");
+        Serial.println("#$");
         Serial.flush();
       }
   }
