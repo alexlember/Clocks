@@ -1,6 +1,7 @@
 #include <FastLED.h>
 #include <virtuabotixRTC.h>
 #include <EasyButton.h>
+#include <arduino-timer.h>
 
 enum ColorScheme { blueLagoon, redDragon, fadeToGray, greenForrest }; // Набор возможных цветовых гамм.
 enum TimeMode { withSeconds, noSeconds, secondsOnDetect }; // Набор возможных режимов отображения.
@@ -25,6 +26,10 @@ FASTLED_USING_NAMESPACE
 #define MODE_BUTTON_PIN 12
 
 #define MOVE_DETECT_PIN 10
+#define BLACK 0 // Режим для погашенного состояния минутной стрелки
+#define COLORED 1 // Режим для цветного состояния минутной стрелки
+#define COLORED_TICKS_COUNT 4 // Число тиков нахождения минутной стрелки в режиме COLORED
+#define BLACK_TICKS_COUNT 1 // Число тиков нахождения минутной стрелки в режиме BLACKED
 
 #define WITH_SEC_ON_DETECT_LED_PIN A4 // Пин для светодиода. Отображение секунд только при детекте. Синий
 #define WITH_NO_SEC_LED_PIN A2 // Пин для светодиода. Секунды не отображаются. Желтый
@@ -40,6 +45,10 @@ EasyButton backButton(BACK_BUTTON_PIN); // Кнопка "назад" (для о�
 TimeMode timeMode = withSeconds; // Текущий режим отображения.
 ColorScheme color = greenForrest; // Текущая цветовая гамма.
 SetupMode setupMode = none; // Текущий режим настройки.
+
+auto timer = timer_create_default(); // Таймер, который меняет состояние @currentMinutesColor
+int currentMinutesColor = BLACK; // Минутная стрелка мигает, чтобы можно было ее отличить, этот флаг хранит текущее состояние
+int ticks = 0; // Счетчик, с помощью которого делится в % соотношении время режимов currentMinutesColor
 
 virtuabotixRTC myRTC(5, 6, 7); // Структура для работы с часами. 5 - CLK, 6 - DAT, 7 - RST.
 CRGB leds[NUM_LEDS]; // Структура для работы со светодиодным кольцом.
@@ -135,11 +144,36 @@ void setup() {
 
   //myRTC.setDS1302Time(00, 00, 00, 2, 29, 10, 2019);
 
+  timer.every(500, blinkMinutes);
+
   Serial.println("initialized");
+}
+
+// Функция, вызываемая по таймеру для переключения режима currentMinutesColor.
+bool blinkMinutes(void *) {
+
+    //String str_currentMinutesColor = String(currentMinutesColor);
+    //Serial.println("tick: " + str_currentMinutesColor);
+
+    if (setupMode == none) {
+
+        if (ticks == BLACK_TICKS_COUNT && currentMinutesColor == BLACK) {
+            ticks = 0;
+            currentMinutesColor = COLORED;
+        } else if (ticks == COLORED_TICKS_COUNT) {
+            ticks = 0;
+            currentMinutesColor = BLACK;
+        }
+
+        ticks++;
+    }
+
+    return true; // keep timer active
 }
 
 void loop()
 {
+  timer.tick();
   modeButton.read();
   frdButton.read();
   backButton.read();
@@ -193,20 +227,20 @@ void loop()
 
       int commandIndex = serialCmd.indexOf("#");
       String cmdName = serialCmd.substring(0, commandIndex);
-      Serial.print("cmdName: " );
-      Serial.print(cmdName);
+      //Serial.print("cmdName: " );
+      //Serial.print(cmdName);
 
       int replyIdIndex = serialCmd.indexOf("#", commandIndex + 1);
       String replyId = serialCmd.substring(commandIndex + 1, replyIdIndex);
 
-      Serial.print(" replyId: " );
-      Serial.print(replyId);
+      //Serial.print(" replyId: " );
+      //Serial.print(replyId);
 
       int bodyIndex = serialCmd.indexOf("#", replyIdIndex + 1);
       String body = serialCmd.substring(replyIdIndex + 1);
 
-      Serial.print(" body: " );
-      Serial.println(body);
+      //Serial.print(" body: " );
+      //Serial.println(body);
 
       //Serial.println("cmdName: " + cmdName + " replyId: " + replyId + " body: " + body);
 
@@ -642,13 +676,29 @@ CRGB getHourColor() {
 
 CRGB getMinuteColor() {
   if (color == blueLagoon) {
-    return CRGB::Blue;
+    if (setupMode != none || currentMinutesColor == COLORED) {
+         return CRGB::Blue;
+    } else {
+         return CRGB::Black;
+    }
   } else if (color == redDragon) {
-    return CRGB::Fuchsia;
+    if (setupMode != none || currentMinutesColor == COLORED) {
+         return CRGB::Fuchsia;
+    } else {
+         return CRGB::Black;
+    }
   } else if (color == fadeToGray) {
-    return CRGB::Peru;
+    if (setupMode != none || currentMinutesColor == COLORED) {
+         return CRGB::Peru;
+    } else {
+         return CRGB::Black;
+    }
   } else {
-    return CRGB::SeaGreen;
+    if (setupMode != none || currentMinutesColor == COLORED) {
+         return CRGB::SeaGreen;
+    } else {
+         return CRGB::Black;
+    }
   }
 }
 
